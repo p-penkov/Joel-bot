@@ -40,32 +40,34 @@ def play_blackjack(num_players):
     random.shuffle(deck)  # Shuffle the deck for a new game
 
     players = []
-    for _ in range(num_players):
-        players.append([])
+    for i in range(num_players):
+        name = input(f"Enter the name for player {i+1}: ")
+        players.append({'name': name, 'hand': []})
 
     for _ in range(2):
         for player in players:
-            deal_cards(deck, player)
+            deal_cards(deck, player['hand'])
 
     dealer_hand = []
     deal_cards(deck, dealer_hand)
 
     for player in players:
         while True:
-            print(f'Player hand: {player} ({calculate_hand_value(player)})')
+            print(f'Player: {player["name"]}')
+            print(f'Player hand: {player["hand"]} ({calculate_hand_value(player["hand"])})')
             print(f'Dealer hand: [{dealer_hand[0]}, <face down>]')
 
-            if calculate_hand_value(player) > 21:
+            if calculate_hand_value(player["hand"]) > 21:
                 print('Player busts!')
                 break
-            elif calculate_hand_value(player) == 21:
+            elif calculate_hand_value(player["hand"]) == 21:
                 print('Player wins!')
                 break
 
-            action = input('Do you want to hit(h) or stand(s)? ')
+            action = input(f'{player["name"]}, do you want to hit(h) or stand(s)? ')
 
             if action.lower() == 'h':
-                deal_cards(deck, player)
+                deal_cards(deck, player["hand"])
             else:
                 break
 
@@ -75,11 +77,11 @@ def play_blackjack(num_players):
         print('Dealer busts! Players win!')
     else:
         for player in players:
-            if calculate_hand_value(player) > 21:
-                print('Player busts!')
-            elif calculate_hand_value(player) > calculate_hand_value(dealer_hand):
-                print('Player wins!')
-            elif calculate_hand_value(player) < calculate_hand_value(dealer_hand):
+            if calculate_hand_value(player["hand"]) > 21:
+                print(f'{player["name"]} busts!')
+            elif calculate_hand_value(player["hand"]) > calculate_hand_value(dealer_hand):
+                print(f'{player["name"]} wins!')
+            elif calculate_hand_value(player["hand"]) < calculate_hand_value(dealer_hand):
                 print('Dealer wins!')
             else:
                 print('Push!')
