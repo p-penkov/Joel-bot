@@ -36,54 +36,57 @@ def calculate_hand_value(hand):
 
     return value 
 
-player_hand = []
-dealer_hand = []
-
-def play_blackjack():
+def play_blackjack(num_players):
     random.shuffle(deck)  # Shuffle the deck for a new game
 
-    player_hand.clear()  # Clear player's hand for a new game
-    dealer_hand.clear()  # Clear dealer's hand for a new game
+    players = []
+    for _ in range(num_players):
+        players.append([])
 
-    deal_cards(deck, player_hand)
-    deal_cards(deck, player_hand)
+    for _ in range(2):
+        for player in players:
+            deal_cards(deck, player)
+
+    dealer_hand = []
     deal_cards(deck, dealer_hand)
-    deal_cards(deck, dealer_hand)
 
-    while True:
-        print(f'Player hand: {player_hand} ({calculate_hand_value(player_hand)})')
-        print(f'Dealer hand: [{dealer_hand[0]}, <face down>]')
+    for player in players:
+        while True:
+            print(f'Player hand: {player} ({calculate_hand_value(player)})')
+            print(f'Dealer hand: [{dealer_hand[0]}, <face down>]')
 
-        if calculate_hand_value(player_hand) > 21:
-            print('Player busts!')
-            break
-        elif calculate_hand_value(player_hand) == 21:
-            print('Player wins!')
-            break
+            if calculate_hand_value(player) > 21:
+                print('Player busts!')
+                break
+            elif calculate_hand_value(player) == 21:
+                print('Player wins!')
+                break
 
-        action = input('Do you want to hit(h) or stand(s)? ')
+            action = input('Do you want to hit(h) or stand(s)? ')
 
-        if action.lower() == 'h':
-            deal_cards(deck, player_hand)
-        else:
-            break
+            if action.lower() == 'h':
+                deal_cards(deck, player)
+            else:
+                break
 
-    print(f'Player hand: {player_hand} ({calculate_hand_value(player_hand)})')
     print(f'Dealer hand: {dealer_hand} ({calculate_hand_value(dealer_hand)})')
 
-    if calculate_hand_value(player_hand) > 21:
-        print('Player busts!')
-    elif calculate_hand_value(dealer_hand) > 21:
-        print('Dealer busts! Player wins!')
-    elif calculate_hand_value(player_hand) > calculate_hand_value(dealer_hand):
-        print('Player wins!')
-    elif calculate_hand_value(player_hand) < calculate_hand_value(dealer_hand):
-        print('Dealer wins!')
+    if calculate_hand_value(dealer_hand) > 21:
+        print('Dealer busts! Players win!')
     else:
-        print('Push!')
+        for player in players:
+            if calculate_hand_value(player) > 21:
+                print('Player busts!')
+            elif calculate_hand_value(player) > calculate_hand_value(dealer_hand):
+                print('Player wins!')
+            elif calculate_hand_value(player) < calculate_hand_value(dealer_hand):
+                print('Dealer wins!')
+            else:
+                print('Push!')
 
 while True:
-    play_blackjack()
+    num_players = int(input('Enter the number of players: '))
+    play_blackjack(num_players)
     play_again = input('Do you want to play another game? (yes/no) ')
     if play_again.lower() != 'y' and play_again.lower() != 'yes':
         break
