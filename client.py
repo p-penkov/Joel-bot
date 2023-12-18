@@ -2,7 +2,7 @@ import socket
 import threading
 
 # Constant declarations
-CHAT_SERVER = ("127.0.0.1", 8001) # for testing with assignment 3 local server
+CHAT_SERVER = ("127.0.0.1", 8042) # for testing with assignment 3 local server
 
 # A function that listens for messages from the server using a buffer of 2 bytes and when the buffer contains a full message that ends in "\n" outputs it to the console
 def bufferThread():
@@ -53,6 +53,10 @@ def listenForMessages():
                         # Concatenate the message array items into a string
                         messageString += messageArray[i] + " "
                     print("Message from " + sender + ": " + messageString)
+                elif "GAME" in response:
+                    # filter out the GAME and print everything else
+                    print(response[4:])
+
     except:
         # Graceful exception handling
         return 0
@@ -97,11 +101,13 @@ while True:
         print("Please enter a message")
     elif message == "!quit":
         break
+    elif message == "!bj":
+        sendMessage("PLAY\n")
     elif message == "!who":
         sendMessage("LIST\n")
-    elif message == "hit":
+    elif message == "h":
         sendMessage("HIT\n")
-    elif message == "stand":
+    elif message == "s":
         sendMessage("STAND\n")
     elif message[0] == "@":
         # Handle message format "@username message"
