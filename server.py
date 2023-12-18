@@ -73,7 +73,7 @@ def play_blackjack():
     while True:
         yourHand = "Your hand" + str(player_hand) + " (" + str(calculate_hand_value(player_hand)) + ")"
         send_message_to_client(yourHand)
-        dealerHand = "Dealer hand: [" + str(dealer_hand[0]) + ", <face down>]" + " (" + str(calculate_hand_value(dealer_hand)) + ")"
+        dealerHand = "Dealer hand: [" + str(dealer_hand[0]) + ", <face down>]"
         send_message_to_client(dealerHand)
 
         if calculate_hand_value(player_hand) > 21:
