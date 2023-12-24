@@ -3,7 +3,7 @@ import threading
 import random
  
 # Constant declarations
-CHAT_SERVER = ("127.0.0.1", 8042)
+CHAT_SERVER = ("127.0.0.1", 8043)
 suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
 ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
 
@@ -11,7 +11,7 @@ ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 
 usersLoggedIn = [] # Format: [username, [[message, from], ...] ]
 serverBusy = False # Set true to decline new login requests
 maxUsers = 64 # Maximum number of users that can be logged in at once
-
+currentUser = None
 deck = []
 
 # Listen on the specified address and port
@@ -22,7 +22,6 @@ server.listen()
 for suit in suits:
     for rank in ranks:
         deck.append(f'{rank} of {suit}')
-
 
 def deal_cards(deck, hand):
     card = deck.pop()
@@ -48,11 +47,19 @@ def calculate_hand_value(hand):
 
     return value
 
-def send_message_to_client(message):
+def send_message_to_client(message, user):
     response = ("GAME" + message + "\n").encode("utf-8")
-    client.send(response)
+    user.send(response)
 
 def play_blackjack():
+    global currentUser
+
+    if currentUser != None:
+        send_message_to_client("You are already playing a game!", currentUser)
+        return
+    else :
+        currentUser = client
+
     deck = []  # Reset the deck for a new game
     suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
     ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
@@ -72,19 +79,19 @@ def play_blackjack():
 
     while True:
         yourHand = "Your hand" + str(player_hand) + " (" + str(calculate_hand_value(player_hand)) + ")"
-        send_message_to_client(yourHand)
+        send_message_to_client(yourHand, currentUser)
         dealerHand = "Dealer hand: [" + str(dealer_hand[0]) + ", <face down>]"
-        send_message_to_client(dealerHand)
+        send_message_to_client(dealerHand, currentUser)
 
         if calculate_hand_value(player_hand) > 21:
-            send_message_to_client('You bust! Game over.')
+            send_message_to_client('You bust! Game over.', currentUser)
             return
         elif calculate_hand_value(player_hand) == 21:
-            send_message_to_client('You win with a Blackjack!')
+            send_message_to_client('You win with a Blackjack!', currentUser)
             return
         
         hitOrStand = "Hit or stand? (h/s)"
-        send_message_to_client(hitOrStand)
+        send_message_to_client(hitOrStand, currentUser)
         action = client.recv(1024).decode("utf-8")
 
         if "HIT" in action:
@@ -93,22 +100,24 @@ def play_blackjack():
             break
     
     dealerHand = "Dealer hand: " + str(dealer_hand) + " (" + str(calculate_hand_value(dealer_hand)) + ")"
-    send_message_to_client(dealerHand)
+    send_message_to_client(dealerHand, currentUser)
    
     while calculate_hand_value(dealer_hand) < 17:
         deal_cards(deck, dealer_hand)
 
         dealerHand = "Dealer hand: " + str(dealer_hand) + " (" + str(calculate_hand_value(dealer_hand)) + ")"
-        send_message_to_client(dealerHand)
+        send_message_to_client(dealerHand, currentUser)
 
     if calculate_hand_value(dealer_hand) > 21:
-            send_message_to_client('Dealer busts! You win!')
+            send_message_to_client('Dealer busts! You win!', currentUser)
     elif calculate_hand_value(player_hand) > calculate_hand_value(dealer_hand):
-        send_message_to_client('You win!')
+        send_message_to_client('You win!', currentUser)
     elif calculate_hand_value(player_hand) < calculate_hand_value(dealer_hand):
-        send_message_to_client('Dealer wins!')
+        send_message_to_client('Dealer wins!', currentUser)
     else:
-        send_message_to_client('Tie!')
+        send_message_to_client('Tie!', currentUser)
+
+    currentUser = None
 
 # A function that listens for messages from the client using a buffer of 2 bytes and when the buffer contains a full message that ends in "\n"
 def bufferThread(client):
@@ -264,3 +273,4 @@ while True:
     
     # Start a new thread to handle each client's requests
     threading.Thread(target=handleClientRequests, args=(client, address)).start()
+    
