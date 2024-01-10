@@ -96,6 +96,6 @@ def play_blackjack():
 
 while True:
     play_blackjack()
-    play_again = input('Do you want to play another game? (yes/no)\n')
+    play_again = input('Do you want to play another game? (y/n)\n')
     if play_again.lower() != 'y' and play_again.lower() != 'yes':
         break

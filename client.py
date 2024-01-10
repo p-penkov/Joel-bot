@@ -101,7 +101,7 @@ while True:
         print("Please enter a message")
     elif message == "!quit":
         break
-    elif message == "!bj":
+    elif message == "!b":
         sendMessage("PLAY\n")
     elif message == "!who":
         sendMessage("LIST\n")
