@@ -63,7 +63,7 @@ def play_blackjack():
     deck = []  # Reset the deck for a new game
     suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
     ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
-
+ 
     for suit in suits:
         for rank in ranks:
             deck.append(f'{rank} of {suit}')
@@ -119,7 +119,6 @@ def play_blackjack():
 
     currentUser = None
 
-# A function that listens for messages from the client using a buffer of 2 bytes and when the buffer contains a full message that ends in "\n"
 def bufferThread(client):
     buffer = ""
     while True:
@@ -151,7 +150,6 @@ def messageReceived(client, username):
     
 # Server logic for handing requests from clients
 def handleClientRequests(client, address):
-    # Initial conditions
     username = None
     loggedIn = False
 
@@ -160,16 +158,13 @@ def handleClientRequests(client, address):
 
     while True:
         try:
-            # Wait for a request from the client
             data = bufferThread(client)
 
             if data:
-                # If the requests contains data
                 request = data.decode("utf-8")
                 print("Request: " + request)
 
                 if loggedIn:
-                    # If the user is logged in already
                     if "LIST" in request:
                         response = ("LIST-OK " + ",".join([user[0] for user in usersLoggedIn]) + "\n").encode("utf-8")
                         client.send(response)
@@ -179,29 +174,23 @@ def handleClientRequests(client, address):
                         messageArray = request.split()
                         messageString = ""
                         for i in range(2, len(messageArray)):
-                            # Concatenate the message array items into a string
                             messageString += messageArray[i] + " "
                         if recipient and messageString:
-                            # If request body is valid (recipient and message are present)
-                            recipient_found = False  # Add this flag
+                            recipient_found = False
                             for user in usersLoggedIn:
-                                # Iterate through all logged in users
                                 if user[0] == recipient:
-                                    # If the user object is the recipient
                                     user[1].append([messageString, username])
                                     response = ("SEND-OK " + recipient + " " + messageString + "\n").encode("utf-8")
                                     client.send(response)
                                     print("Response: " + response.decode("utf-8"))
-                                    recipient_found = True  # Set the flag to True
+                                    recipient_found = True
                                     break
-                            if not recipient_found:  # Check if the recipient was not found
-                                # Recipient is not logged in
+                            if not recipient_found:  
                                 response = ("BAD-DEST-USER" + "\n").encode("utf-8")
                                 client.send(response)
                                 print("Response: " + response.decode("utf-8"))
                                 
                         else:
-                            # Request body is invalid - not enough arguments (recipient and message)
                             response = ("BAD-RQST-BODY" + "\n").encode("utf-8")
                             client.send(response)
                             print("Response: " + response.decode("utf-8"))

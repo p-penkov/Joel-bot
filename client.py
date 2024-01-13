@@ -2,9 +2,8 @@ import socket
 import threading
 
 # Constant declarations
-CHAT_SERVER = ("127.0.0.1", 8043) # for testing with assignment 3 local server
+CHAT_SERVER = ("127.0.0.1", 8043) # for testing
 
-# A function that listens for messages from the server using a buffer of 2 bytes and when the buffer contains a full message that ends in "\n" outputs it to the console
 def bufferThread():
     buffer = ""
     while True:
