@@ -1,125 +1,217 @@
 import pygame
+import random
 
-# pygame setup
-pygame.init()
-screen = pygame.display.set_mode((320, 480))  # Set screen resolution to a multiple of 320x480
-pygame.display.set_caption("Space Shooter")
-clock = pygame.time.Clock()
-running = True
-dt = 0
+class Game:
+    def __init__(self):
+        # pygame setup
+        pygame.init()
+        self.screen = pygame.display.set_mode((320, 480))  # Set screen resolution to a multiple of 320x480
+        pygame.display.set_caption("Space Shooter")
+        self.clock = pygame.time.Clock()
+        self.running = True
+        self.dt = 0
+        self.bullets = []
+        self.score = 0
+        self.asteroids = []
+        self.end = False
 
-# load images
-player = pygame.image.load('images/blueship2.png').convert_alpha()  # Use convert_alpha() for transparent background
-background = pygame.image.load('images/background_space.png').convert()
-background = pygame.transform.scale(background, (320, 480))  # Stretch the background image to fit the resolution
-player = pygame.transform.scale(player, (40, 40))
+        # load images
+        self.player = pygame.image.load('images/blueship2.png').convert_alpha()  # Use convert_alpha() for transparent background
+        self.background = pygame.image.load('images/background_space.png').convert()
+        self.background = pygame.transform.scale(self.background, (320, 480))  # Stretch the background image to fit the resolution
+        self.player = pygame.transform.scale(self.player, (40, 40))
+        self.bullet = pygame.image.load('images/bullet.png').convert_alpha()
+        self.bullet = pygame.transform.scale(self.bullet, (15, 15))
+        self.bullet = pygame.transform.rotate(self.bullet, 270)
+        self.asteroid = pygame.image.load('images/poo.png').convert_alpha()
+        self.asteroid = pygame.transform.scale(self.asteroid, (50, 50))
 
-player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
-background_pos = pygame.Vector2(0, 0)
-background2_pos = pygame.Vector2(0, -screen.get_height())  # Initialize the second background position above the screen
+        # initialize positions
+        self.player_pos = pygame.Vector2(self.screen.get_width() / 2, self.screen.get_height() / 2)
+        self.background_pos = pygame.Vector2(0, 0)
+        self.background2_pos = pygame.Vector2(0, -self.screen.get_height())  # Initialize the second background position above the screen
 
-# Start menu variables
-start_menu = True
-selected_option = 0
-options = ["Start", "Quit"]
-font = pygame.font.Font(None, 36)
+        # Menu variables
+        self.start_menu = True
+        self.selected_option = 0
+        self.options = ["Start", "Quit"]
+        self.options_pause = ["Resume", "Quit"]
+        self.options_end = ["Restart", "Quit"]
+        self.font = pygame.font.Font(None, 28)
 
-# Background speed variables
-background_speed = 20
-background2_speed = 20
-speed_increment = 0.5
-max_speed = 100
+        # Background speed variables
+        self.background_speed = 20
+        self.background2_speed = 20
+        self.speed_increment = 0.5
+        self.max_speed = 100
 
-paused = False
+        self.paused = False
 
-while running:
-    # Start menu
-    if start_menu:
+    def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                self.running = False
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
-                    selected_option = (selected_option - 1) % len(options)
-                elif event.key == pygame.K_DOWN:
-                    selected_option = (selected_option + 1) % len(options)
-                elif event.key == pygame.K_RETURN:
-                    if selected_option == 0:
-                        start_menu = False
-                    elif selected_option == 1:
-                        running = False
+                if self.start_menu:
+                    if event.key == pygame.K_UP or event.key == pygame.K_w:
+                        self.selected_option = (self.selected_option - 1) % len(self.options)
+                    elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
+                        self.selected_option = (self.selected_option + 1) % len(self.options)
+                    elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                        if self.selected_option == 0:
+                            self.start_menu = False
+                            self.paused = False
+                        elif self.selected_option == 1:
+                            self.running = False
+                elif self.paused:
+                    if event.key == pygame.K_UP or event.key == pygame.K_w:
+                        self.selected_option = (self.selected_option - 1) % len(self.options_pause)
+                    elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
+                        self.selected_option = (self.selected_option + 1) % len(self.options_pause)
+                    elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                        if self.selected_option == 0:
+                            self.paused = False
+                        elif self.selected_option == 1:
+                            self.running = False
+                else:
+                    # Shoot bullets
+                    if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                        bullet_pos = pygame.Vector2(self.player_pos.x + self.player.get_width() / 2, self.player_pos.y)
+                        self.bullets.append(bullet_pos)
+                    elif event.key == pygame.K_ESCAPE:
+                        self.paused = True
 
-        screen.blit(background, (background_pos.x, background_pos.y))  # Draw the first background
-        screen.blit(background, (background2_pos.x, background2_pos.y))  # Draw the second background
+    def draw_menu(self):
+        menu_options = self.options if self.start_menu else self.options_pause
+        self.screen.blit(self.background, (self.background_pos.x, self.background_pos.y))  # Draw the first background
+        self.screen.blit(self.background, (self.background2_pos.x, self.background2_pos.y))  # Draw the second background
 
         # Draw options
-        for i, option in enumerate(options):
-            text = font.render(option, True, (255, 255, 0) if i == selected_option else (255, 255, 255))
-            text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 + i * 40))
-            screen.blit(text, text_rect)
+        for i, option in enumerate(menu_options):
+            if self.paused:
+                self.screen.blit(self.player, self.player_pos)
+                for bullet_pos in self.bullets:
+                    self.screen.blit(self.bullet, bullet_pos)
+                for asteroid_pos, asteroid_speed in self.asteroids:
+                    self.screen.blit(self.asteroid, asteroid_pos)
+            text = self.font.render(option, True, (255, 255, 0) if i == self.selected_option else (255, 255, 255))
+            text_rect = text.get_rect(center=(self.screen.get_width() / 2, self.screen.get_height() / 2 + i * 40))
+            self.screen.blit(text, text_rect)
+            rounded_score = round(self.score)
+            self.screen.blit(self.font.render(f'Score: {rounded_score}', True, (255, 255, 255)), (10, 10))
 
         # Reset the first background position when it reaches the bottom
-        if background_pos.y >= screen.get_height():
-            background_pos.y = -screen.get_height()
+        if self.background_pos.y >= self.screen.get_height():
+            self.background_pos.y = -self.screen.get_height()
 
         # Reset the second background position when it reaches the bottom
-        if background2_pos.y >= screen.get_height():
-            background2_pos.y = -screen.get_height()
+        if self.background2_pos.y >= self.screen.get_height():
+            self.background2_pos.y = -self.screen.get_height()
 
-    # Game logic
-    else:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    paused = not paused
+    def game_logic(self):
+        self.screen.blit(self.background, (self.background_pos.x, self.background_pos.y))  # Draw the first background
+        self.screen.blit(self.background, (self.background2_pos.x, self.background2_pos.y))  # Draw the second background
+        self.screen.blit(self.player, self.player_pos)  # Draw the player ship on top of the background
 
-        if not paused:
-            screen.blit(background, (background_pos.x, background_pos.y))  # Draw the first background
-            screen.blit(background, (background2_pos.x, background2_pos.y))  # Draw the second background
-            screen.blit(player, player_pos)  # Draw the player ship on top of the background
+        keys = pygame.key.get_pressed()
+        # UP
+        if keys[pygame.K_w]:
+            if self.player_pos.y > 0:
+                self.player_pos.y -= 400 * self.dt
+        # DOWN
+        if keys[pygame.K_s]:
+            if self.player_pos.y < self.screen.get_height() - self.player.get_height():
+                self.player_pos.y += 400 * self.dt
+        # LEFT
+        if keys[pygame.K_a]:
+            if self.player_pos.x > 0:
+                self.player_pos.x -= 400 * self.dt
+        # RIGHT
+        if keys[pygame.K_d]:
+            if self.player_pos.x < self.screen.get_width() - self.player.get_width():
+                self.player_pos.x += 400 * self.dt
 
-            keys = pygame.key.get_pressed()
-            # UP
-            if keys[pygame.K_w]:
-                if player_pos.y > 0:
-                    player_pos.y -= 400 * dt
-            # DOWN
-            if keys[pygame.K_s]:
-                if player_pos.y < screen.get_height() - player.get_height():
-                    player_pos.y += 400 * dt
-            # LEFT
-            if keys[pygame.K_a]:
-                if player_pos.x > 0:
-                    player_pos.x -= 400 * dt
-            # RIGHT
-            if keys[pygame.K_d]:
-                if player_pos.x < screen.get_width() - player.get_width():
-                    player_pos.x += 400 * dt
+        # Move and draw bullets
+        for bullet_pos in self.bullets:
+            bullet_pos.y -= 600 * self.dt  # Move the bullet upwards
+            self.screen.blit(self.bullet, bullet_pos)
+            if bullet_pos.y < -self.bullet.get_height():  # Remove the bullet when it goes offscreen
+                self.bullets.remove(bullet_pos)
 
-            # Move the backgrounds down with increasing speed
-            background_pos.y += background_speed * dt
-            background2_pos.y += background2_speed * dt
+        # Move the backgrounds down with increasing speed
+        self.background_pos.y += self.background_speed * self.dt
+        self.background2_pos.y += self.background2_speed * self.dt
 
-            # Increase background speed over time
-            if background_speed < max_speed and not start_menu:
-                background_speed += speed_increment * dt
-            if background2_speed < max_speed and not start_menu:
-                background2_speed += speed_increment * dt
+        # Increase background speed over time
+        if self.background_speed < self.max_speed and not self.start_menu:
+            self.background_speed += self.speed_increment * self.dt
+        if self.background2_speed < self.max_speed and not self.start_menu:
+            self.background2_speed += self.speed_increment * self.dt
 
-            # Reset the first background position when it reaches the bottom
-            if background_pos.y >= screen.get_height():
-                background_pos.y = -screen.get_height()
+        # Reset the first background position when it reaches the bottom
+        if self.background_pos.y >= self.screen.get_height():
+            self.background_pos.y = -self.screen.get_height()
 
-            # Reset the second background position when it reaches the bottom
-            if background2_pos.y >= screen.get_height():
-                background2_pos.y = -screen.get_height()
+        # Reset the second background position when it reaches the bottom
+        if self.background2_pos.y >= self.screen.get_height():
+            self.background2_pos.y = -self.screen.get_height()
 
-    # flip() the display to put your work on screen
-    pygame.display.flip()
+        if not self.paused:
+            if random.random() < 0.005:  # Adjust the probability to control the frequency of asteroid spawns
+                asteroid_pos = pygame.Vector2(random.randint(0, self.screen.get_width() - self.asteroid.get_width()), -self.asteroid.get_height())
+                asteroid_speed = self.background_speed * self.dt * 5 # Spawn asteroids with a speed proportional to the background speed
 
-    # limits FPS to 60
-    dt = clock.tick(120) / 1000
+                # Check if there is enough distance between the new asteroid and existing asteroids
+                if all(abs(asteroid_pos.y - existing_pos.y) > self.asteroid.get_height() for existing_pos, _ in self.asteroids):
+                    self.asteroids.append((asteroid_pos, asteroid_speed))
 
-pygame.quit()
+        # Move and draw asteroids
+        for asteroid_pos, asteroid_speed in self.asteroids:
+            asteroid_pos.y += asteroid_speed  # Move the asteroid downwards with a constant speed
+            self.screen.blit(self.asteroid, asteroid_pos)
+            if asteroid_pos.y > self.screen.get_height():  # Remove the asteroid when it goes offscreen
+                self.asteroids.remove((asteroid_pos, asteroid_speed))
+
+        # Update and draw the score
+        self.score += self.dt * 10
+        rounded_score = round(self.score)
+        self.screen.blit(self.font.render(f'Score: {rounded_score}', True, (255, 255, 255)), (10, 10))
+
+        # Check for collisions between the player and asteroids
+        for asteroid_pos, _ in self.asteroids:
+            if self.player_pos.distance_to(asteroid_pos) < 40:
+                # show end menu
+                self.running = False
+
+        # Check for collisions between bullets and asteroids
+        for bullet_pos in self.bullets:
+            for asteroid_pos, _ in self.asteroids:
+                # when a collision occurs a +100 is displayed on screen for a few seconds at the asteroid's position, then removed, without pausing the game
+                if bullet_pos.distance_to(asteroid_pos) < 40:
+                    self.bullets.remove(bullet_pos)
+                    self.asteroids.remove((asteroid_pos, _))
+                    self.score += 100
+                    rounded_score = round(self.score)
+                    self.screen.blit(self.font.render(f'+100', True, (255, 255, 0)), (asteroid_pos.x, asteroid_pos.y))
+                    pygame.display.flip()
+                    pygame.time.delay(1000)
+                    self.screen.blit(self.background, (asteroid_pos.x, asteroid_pos.y))
+                    self.screen.blit(self.font.render(f'Score: {rounded_score}', True, (255, 255, 255)), (10, 10))
+
+    def run(self):
+        while self.running:
+            self.handle_events()
+
+            if self.start_menu or self.paused:
+                self.draw_menu()
+            else:
+                self.game_logic()
+
+            pygame.display.flip()
+
+            self.dt = self.clock.tick(120) / 1000
+
+        pygame.quit()
+
+game = Game()
+game.run()
