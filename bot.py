@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from config import TOKEN, API_KEY
+from config import TOKEN
 import random
 
 bot = commands.Bot(command_prefix="!", intents = discord.Intents.all())
